@@ -1,10 +1,30 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Hello World</title>
-  </head>
-  <body>
-    <h1 style="text-align:center; margin-top:50px;">Hello World Photo Shrank V1</h1>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Shrank - Open Folder</title>
+  <style>
+    body { font-family:sans-serif; margin:0; padding:0; background:#f5f5f5; }
+    #controls { padding:15px; background:#fff; display:flex; align-items:center; gap:15px; }
+    #folder-path { font-weight:bold; }
+    button { padding:5px 10px; font-size:14px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button id="open">Open Folder</button>
+    <span id="folder-path">No folder selected</span>
+  </div>
+
+  <script>
+    const button = document.getElementById("open");
+    const folderPathSpan = document.getElementById("folder-path");
+
+    button.onclick = async () => {
+      const folder = await window.api.openFolder();
+      if (!folder) return;
+      folderPathSpan.textContent = `Selected: ${folder}`;
+    };
+  </script>
+</body>
 </html>
