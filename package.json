@@ -1,0 +1,15 @@
+{
+  "name": "photo-shrank",
+  "version": "1.0.0",
+  "description": "Hello World Electron App",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^39.2.7"
+  }
+}
