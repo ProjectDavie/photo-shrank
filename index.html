@@ -57,6 +57,39 @@
       cursor:pointer;
       user-select:none;
     }
+
+    #modal .info-btn {
+      position:absolute;
+      bottom:20px;
+      right:30px;
+      padding:5px 10px;
+      font-size:14px;
+      cursor:pointer;
+      border:none;
+      background:#fff;
+      color:#000;
+      border-radius:5px;
+      z-index:1010;
+    }
+
+    #modal .info-box {
+      display:none;
+      position:absolute;
+      top:50px;
+      right:30px;
+      max-width:400px;
+      max-height:80%;
+      overflow:auto;
+      background:#fff;
+      color:#000;
+      padding:15px;
+      border-radius:5px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.5);
+      white-space:normal;
+      font-family: Arial, sans-serif;
+      font-size:13px;
+      z-index:1020;
+    }
   </style>
 </head>
 <body>
@@ -72,6 +105,8 @@
   <span class="close">&times;</span>
   <img id="modal-img">
   <video id="modal-video" controls></video>
+  <button class="info-btn">More Info</button>
+  <div class="info-box" id="info-box"></div>
 </div>
 
 <script>
@@ -82,9 +117,41 @@ const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modal-img");
 const modalVideo = document.getElementById("modal-video");
 const closeBtn = modal.querySelector(".close");
+const infoBtn = modal.querySelector(".info-btn");
+const infoBox = document.getElementById("info-box");
 
 let currentIndex = 0;
 let files = [];
+let thumbnails = {};
+let fileInfos = {};
+
+// Dummy JSON data generator for demo
+function getFileInfo(file) {
+  if (fileInfos[file.path]) return fileInfos[file.path];
+
+  const now = new Date();
+  fileInfos[file.path] = {
+    title: file.path.split(/[\\/]/).pop(),
+    description: "",
+    imageViews: Math.floor(Math.random() * 100).toString(),
+    creationTime: { timestamp: Math.floor(now.getTime()/1000).toString(), formatted: now.toUTCString() },
+    photoTakenTime: { timestamp: Math.floor(now.getTime()/1000).toString(), formatted: now.toUTCString() },
+    geoData: { latitude:0, longitude:0, altitude:0, latitudeSpan:0, longitudeSpan:0 },
+    url: "https://photos.google.com/photo/EXAMPLE",
+    googlePhotosOrigin: { mobileUpload: { deviceFolder:{localFolderName:""}, deviceType:"ANDROID_PHONE" } },
+    appSource: { androidPackageName: "com.transsion.camera" }
+  };
+  return fileInfos[file.path];
+}
+
+// Safe getter for nested properties
+const getVal = (obj, path) => {
+  try {
+    return path.split(".").reduce((o,p)=>o[p], obj) || "";
+  } catch(e) {
+    return "";
+  }
+};
 
 button.onclick = async () => {
   const folder = await window.api.openFolder();
@@ -95,9 +162,37 @@ button.onclick = async () => {
   renderGallery(files);
 };
 
-function renderGallery(files) {
+async function generateThumbnail(file) {
+  if (thumbnails[file.path]) return thumbnails[file.path];
+
+  const ext = file.path.split(".").pop().toLowerCase();
+  if (["mp4","mov","mkv"].includes(ext)) {
+    thumbnails[file.path] = file.path;
+  } else {
+    const img = new Image();
+    img.src = file.path;
+    await img.decode();
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const maxWidth = 200;
+    const maxHeight = 150;
+    let ratio = Math.min(maxWidth/img.width, maxHeight/img.height);
+    canvas.width = img.width * ratio;
+    canvas.height = img.height * ratio;
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    thumbnails[file.path] = canvas.toDataURL();
+  }
+
+  return thumbnails[file.path];
+}
+
+async function renderGallery(files) {
   gallery.innerHTML = "";
-  files.forEach((file, index) => {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     const container = document.createElement("div");
     container.className = "photo-container";
 
@@ -108,13 +203,13 @@ function renderGallery(files) {
       container.appendChild(video);
     } else {
       const img = document.createElement("img");
-      img.src = file.path;
+      img.src = await generateThumbnail(file);
       container.appendChild(img);
     }
 
-    container.onclick = () => openModal(index);
+    container.onclick = () => openModal(i);
     gallery.appendChild(container);
-  });
+  }
 }
 
 function openModal(index) {
@@ -132,12 +227,39 @@ function openModal(index) {
     modalImg.style.display = "block";
   }
 
+  infoBox.style.display = "none"; // hide info by default
   modal.style.display = "flex";
 }
 
 closeBtn.onclick = () => {
   modal.style.display = "none";
   modalVideo.pause();
+  infoBox.style.display = "none";
+}
+
+infoBtn.onclick = () => {
+  const file = files[currentIndex];
+  const info = getFileInfo(file);
+
+  infoBox.innerHTML = `
+    <strong>Title:</strong> ${getVal(info,"title")}<br>
+    <strong>Description:</strong> ${getVal(info,"description")}<br>
+    <strong>Image Views:</strong> ${getVal(info,"imageViews")}<br>
+    <strong>Creation Time:</strong> ${getVal(info,"creationTime.formatted")}<br>
+    <strong>Photo Taken Time:</strong> ${getVal(info,"photoTakenTime.formatted")}<br>
+    <strong>Geo Data:</strong><br>
+      &nbsp;&nbsp;Latitude: ${getVal(info,"geoData.latitude")}<br>
+      &nbsp;&nbsp;Longitude: ${getVal(info,"geoData.longitude")}<br>
+      &nbsp;&nbsp;Altitude: ${getVal(info,"geoData.altitude")}<br>
+      &nbsp;&nbsp;Latitude Span: ${getVal(info,"geoData.latitudeSpan")}<br>
+      &nbsp;&nbsp;Longitude Span: ${getVal(info,"geoData.longitudeSpan")}<br>
+    <strong>URL:</strong> ${getVal(info,"url")}<br>
+    <strong>Mobile Upload Device Type:</strong> ${getVal(info,"googlePhotosOrigin.mobileUpload.deviceType")}<br>
+    <strong>Local Folder Name:</strong> ${getVal(info,"googlePhotosOrigin.mobileUpload.deviceFolder.localFolderName")}<br>
+    <strong>App Source:</strong> ${getVal(info,"appSource.androidPackageName")}
+  `;
+
+  infoBox.style.display = infoBox.style.display === "block" ? "none" : "block";
 }
 
 document.addEventListener("keydown", (e) => {
@@ -147,8 +269,15 @@ document.addEventListener("keydown", (e) => {
   if(e.key === "Escape") closeBtn.onclick();
 });
 
-function nextPhoto() { currentIndex = (currentIndex + 1) % files.length; openModal(currentIndex); }
-function prevPhoto() { currentIndex = (currentIndex - 1 + files.length) % files.length; openModal(currentIndex); }
+function nextPhoto() { 
+  currentIndex = (currentIndex + 1) % files.length; 
+  openModal(currentIndex); 
+}
+
+function prevPhoto() { 
+  currentIndex = (currentIndex - 1 + files.length) % files.length; 
+  openModal(currentIndex); 
+}
 </script>
 
 </body>

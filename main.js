@@ -7,6 +7,27 @@ const MEDIA_EXTENSIONS = [
   ".mp4", ".mov", ".mkv"
 ];
 
+// Recursively scan folder
+function scanFolderRecursive(folderPath) {
+  let files = [];
+
+  const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(folderPath, entry.name);
+    if (entry.isDirectory()) {
+      files = files.concat(scanFolderRecursive(fullPath));
+    } else if (MEDIA_EXTENSIONS.includes(path.extname(fullPath).toLowerCase())) {
+      const stats = fs.statSync(fullPath);
+      files.push({
+        path: fullPath,
+        mtime: stats.mtime.getTime()
+      });
+    }
+  }
+
+  return files;
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1000,
@@ -30,24 +51,10 @@ ipcMain.handle("open-folder-dialog", async () => {
 });
 
 ipcMain.handle("scan-folder", async (_, folderPath) => {
-  const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  let files = scanFolderRecursive(folderPath);
 
-  const files = entries
-    .filter(e => e.isFile())
-    .map(e => {
-      const fullPath = path.join(folderPath, e.name);
-      const stats = fs.statSync(fullPath);
-      return {
-        path: fullPath,
-        mtime: stats.mtime.getTime()
-      };
-    })
-    .filter(file =>
-      MEDIA_EXTENSIONS.includes(path.extname(file.path).toLowerCase())
-    )
-    // Sort newest first
-    .sort((a, b) => b.mtime - a.mtime);
-
+  // Sort newest first
+  files.sort((a, b) => b.mtime - a.mtime);
   return files;
 });
 
