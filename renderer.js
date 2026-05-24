@@ -8,10 +8,23 @@ const closeBtn = modal.querySelector(".close");
 const infoBtn = modal.querySelector(".info-btn");
 const infoBox = document.getElementById("info-box");
 
+const VIDEO_EXTENSIONS = ["mp4", "mov", "mkv"];
+
 let currentIndex = 0;
-let files = [];
+let allFiles = [];
+let mediaFiles = [];
 let thumbnails = {};
 let fileInfos = {};
+
+function findPairedJson(mediaPath) {
+  const index = allFiles.findIndex(file => file.path === mediaPath);
+  if (index === -1) return null;
+
+  const nextFile = allFiles[index + 1];
+  if (!nextFile || !nextFile.path.toLowerCase().endsWith(".json")) return null;
+
+  return nextFile;
+}
 
 // Dummy JSON data generator
 function getFileInfo(file) {
@@ -45,15 +58,16 @@ button.onclick = async () => {
   if (!folder) return;
 
   folderPathSpan.textContent = `Selected: ${folder}`;
-  files = await window.api.scanFolder(folder);
-  renderGallery(files);
+  allFiles = await window.api.scanFolder(folder);
+  mediaFiles = allFiles.filter(file => !file.path.toLowerCase().endsWith(".json"));
+  renderGallery(mediaFiles);
 };
 
 async function generateThumbnail(file) {
   if (thumbnails[file.path]) return thumbnails[file.path];
 
   const ext = file.path.split(".").pop().toLowerCase();
-  if (["mp4","mov","mkv"].includes(ext)) {
+  if (VIDEO_EXTENSIONS.includes(ext)) {
     thumbnails[file.path] = file.path;
   } else {
     const img = new Image();
@@ -84,7 +98,7 @@ async function renderGallery(files) {
     container.className = "photo-container";
 
     const ext = file.path.split(".").pop().toLowerCase();
-    if (["mp4","mov","mkv"].includes(ext)) {
+    if (VIDEO_EXTENSIONS.includes(ext)) {
       const video = document.createElement("video");
       video.src = file.path;
       container.appendChild(video);
@@ -101,10 +115,10 @@ async function renderGallery(files) {
 
 function openModal(index) {
   currentIndex = index;
-  const file = files[index];
+  const file = mediaFiles[index];
   const ext = file.path.split(".").pop().toLowerCase();
 
-  if (["mp4","mov","mkv"].includes(ext)) {
+  if (VIDEO_EXTENSIONS.includes(ext)) {
     modalImg.style.display = "none";
     modalVideo.src = file.path;
     modalVideo.style.display = "block";
@@ -124,30 +138,44 @@ closeBtn.onclick = () => {
   infoBox.style.display = "none";
 }
 
-infoBtn.onclick = () => {
-  const file = files[currentIndex];
-  const info = getFileInfo(file);
+infoBtn.onclick = async () => {
+  if (!mediaFiles.length) return;
+
+  const currentMedia = mediaFiles[currentIndex];
+  const pairedJson = findPairedJson(currentMedia.path);
+
+  if (!pairedJson) {
+    infoBox.innerHTML = "<em>No paired JSON file found for this media file</em>";
+    infoBox.style.display = "block";
+    return;
+  }
+
+  let jsonData = null;
+  try {
+    jsonData = await window.api.readJsonFile(pairedJson.path);
+  } catch (e) {
+    jsonData = null;
+  }
+
+  if (!jsonData) {
+    infoBox.innerHTML = `
+      <div style="font-family: monospace; font-size: 12px;">
+        <strong>Unable to parse paired JSON</strong><br><br>
+        <pre>${pairedJson.path}</pre>
+      </div>
+    `;
+    infoBox.style.display = "block";
+    return;
+  }
 
   infoBox.innerHTML = `
-    <strong>Title:</strong> ${getVal(info,"title")}<br>
-    <strong>Description:</strong> ${getVal(info,"description")}<br>
-    <strong>Image Views:</strong> ${getVal(info,"imageViews")}<br>
-    <strong>Creation Time:</strong> ${getVal(info,"creationTime.formatted")}<br>
-    <strong>Photo Taken Time:</strong> ${getVal(info,"photoTakenTime.formatted")}<br>
-    <strong>Geo Data:</strong><br>
-      &nbsp;&nbsp;Latitude: ${getVal(info,"geoData.latitude")}<br>
-      &nbsp;&nbsp;Longitude: ${getVal(info,"geoData.longitude")}<br>
-      &nbsp;&nbsp;Altitude: ${getVal(info,"geoData.altitude")}<br>
-      &nbsp;&nbsp;Latitude Span: ${getVal(info,"geoData.latitudeSpan")}<br>
-      &nbsp;&nbsp;Longitude Span: ${getVal(info,"geoData.longitudeSpan")}<br>
-    <strong>URL:</strong> ${getVal(info,"url")}<br>
-    <strong>Mobile Upload Device Type:</strong> ${getVal(info,"googlePhotosOrigin.mobileUpload.deviceType")}<br>
-    <strong>Local Folder Name:</strong> ${getVal(info,"googlePhotosOrigin.mobileUpload.deviceFolder.localFolderName")}<br>
-    <strong>App Source:</strong> ${getVal(info,"appSource.androidPackageName")}
+    <div style="font-family: monospace; font-size: 12px;">
+      <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+    </div>
   `;
 
-  infoBox.style.display = infoBox.style.display === "block" ? "none" : "block";
-}
+  infoBox.style.display = "block";
+};
 
 document.addEventListener("keydown", (e) => {
   if(modal.style.display !== "flex") return;
@@ -157,11 +185,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 function nextPhoto() { 
-  currentIndex = (currentIndex + 1) % files.length; 
+  currentIndex = (currentIndex + 1) % mediaFiles.length; 
   openModal(currentIndex); 
 }
 
 function prevPhoto() { 
-  currentIndex = (currentIndex - 1 + files.length) % files.length; 
+  currentIndex = (currentIndex - 1 + mediaFiles.length) % mediaFiles.length; 
   openModal(currentIndex); 
 }
