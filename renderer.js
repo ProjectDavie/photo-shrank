@@ -53,6 +53,59 @@ const getVal = (obj, path) => {
   }
 };
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderJsonValue(value) {
+  if (value === null || value === undefined) {
+    return `<span class="details-value details-null">null</span>`;
+  }
+
+  if (Array.isArray(value)) {
+    return `
+      <div class="details-array">
+        ${value.map(item => `<div class="details-item">${renderJsonValue(item)}</div>`).join("")}
+      </div>
+    `;
+  }
+
+  if (typeof value === "object") {
+    return `
+      <div class="details-block">
+        ${Object.entries(value).map(([key, nested]) => `
+          <div class="details-row nested">
+            <span class="details-key">${escapeHtml(key)}</span>
+            <span class="details-colon">:</span>
+            <span class="details-value">${renderJsonValue(nested)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  return `<span class="details-value">${escapeHtml(value)}</span>`;
+}
+
+function renderDetails(obj) {
+  return `
+    <div class="info-details">
+      ${Object.entries(obj).map(([key, value]) => `
+        <div class="details-row">
+          <span class="details-key">${escapeHtml(key)}</span>
+          <span class="details-colon">:</span>
+          <span class="details-value">${renderJsonValue(value)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 button.onclick = async () => {
   const folder = await window.api.openFolder();
   if (!folder) return;
@@ -168,12 +221,7 @@ infoBtn.onclick = async () => {
     return;
   }
 
-  infoBox.innerHTML = `
-    <div style="font-family: monospace; font-size: 12px;">
-      <pre>${JSON.stringify(jsonData, null, 2)}</pre>
-    </div>
-  `;
-
+  infoBox.innerHTML = renderDetails(jsonData);
   infoBox.style.display = "block";
 };
 
