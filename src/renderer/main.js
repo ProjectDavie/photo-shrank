@@ -6,7 +6,7 @@ const {
   addTags,
   addPeople,
   autoMigrateFolder
-} = require("../../main/services/metadata");
+} = require("../main/services/metadata");
 
 function registerMetadataIPC() {
 
