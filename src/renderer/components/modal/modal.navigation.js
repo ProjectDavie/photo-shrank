@@ -1,4 +1,4 @@
-import { state } from "../state/media.state.js";
+import { state } from "../../state/media.state.js";
 import { openModal } from "./modal.js";
 
 function nextPhoto() {

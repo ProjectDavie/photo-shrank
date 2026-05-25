@@ -1,55 +1,85 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const {
+  contextBridge,
+  ipcRenderer
+} = require("electron");
 
-contextBridge.exposeInMainWorld("api", {
+contextBridge.exposeInMainWorld(
+  "api",
+  {
 
-  folder: {
-    open: () =>
-      ipcRenderer.invoke("open-folder-dialog"),
+    folder: {
 
-    scan: (folderPath) =>
-      ipcRenderer.invoke("scan-folder", folderPath)
-  },
+      open: () =>
+        ipcRenderer.invoke(
+          "folder:open"
+        ),
 
-  metadata: {
-    read: (filePath) =>
-      ipcRenderer.invoke(
-        "metadata:read",
-        filePath
-      ),
+      select: () =>
+        ipcRenderer.invoke(
+          "folder:open"
+        ),
 
-    load: (mediaPath) =>
-      ipcRenderer.invoke(
-        "metadata:load",
-        mediaPath
-      ),
+      scan: (folderPath) =>
+        ipcRenderer.invoke(
+          "scan-folder",
+          folderPath
+        )
+    },
 
-    save: (mediaPath, metadata) =>
-      ipcRenderer.invoke(
-        "metadata:save",
+    metadata: {
+
+      read: (filePath) =>
+        ipcRenderer.invoke(
+          "metadata:read",
+          filePath
+        ),
+
+      load: (mediaPath) =>
+        ipcRenderer.invoke(
+          "metadata:load",
+          mediaPath
+        ),
+
+      save: (
         mediaPath,
         metadata
-      ),
+      ) =>
+        ipcRenderer.invoke(
+          "metadata:save",
+          mediaPath,
+          metadata
+        ),
 
-    addTags: (mediaPath, tags) =>
-      ipcRenderer.invoke(
-        "metadata:add-tags",
+      addTags: (
         mediaPath,
         tags
-      ),
+      ) =>
+        ipcRenderer.invoke(
+          "metadata:add-tags",
+          mediaPath,
+          tags
+        ),
 
-    addPeople: (mediaPath, people) =>
-      ipcRenderer.invoke(
-        "metadata:add-people",
+      addPeople: (
         mediaPath,
         people
-      )
-  },
+      ) =>
+        ipcRenderer.invoke(
+          "metadata:add-people",
+          mediaPath,
+          people
+        )
+    },
 
-  migration: {
-    autoRename: (folderPath) =>
-      ipcRenderer.invoke(
-        "migration:auto-rename",
+    migration: {
+
+      autoRename: (
         folderPath
-      )
+      ) =>
+        ipcRenderer.invoke(
+          "folder:migrate",
+          folderPath
+        )
+    }
   }
-});
+);

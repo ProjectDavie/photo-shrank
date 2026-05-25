@@ -1,52 +1,134 @@
-import { dom } from "./utils/dom.js";
-import { state } from "./state/media.state.js";
-import { renderGallery } from "./gallery/gallery.render.js";
-import { closeModal } from "./modal/modal.js";
-import { nextPhoto, prevPhoto } from "./modal/modal.navigation.js";
-import { showInfo } from "./modal/modal.info.js";
+import { dom }
+from "./utils/dom.js";
 
-dom.button.onclick = async () => {
+import { state }
+from "./state/media.state.js";
 
-  const folder =
-    await window.api.folder.open();
+import { renderGallery }
+from "./components/gallery/gallery.render.js";
 
-  if (!folder) return;
+import {
+  closeModal
+} from "./components/modal/modal.js";
 
-  dom.folderPathSpan.textContent =
-    `Selected: ${folder}`;
+import {
+  nextPhoto,
+  prevPhoto
+} from "./components/modal/modal.navigation.js";
 
-  state.allFiles =
-    await window.api.folder.scan(folder);
+import {
+  showInfo
+} from "./components/modal/modal.info.js";
 
-  state.mediaFiles =
-    state.allFiles.filter(
-      f => !f.path.endsWith(".json")
-    );
+dom.button.onclick =
+  async () => {
 
-  renderGallery(state.mediaFiles);
-};
+    try {
 
-dom.closeBtn.onclick = closeModal;
+      console.log(
+        "Opening folder..."
+      );
 
-dom.infoBtn.onclick = showInfo;
+      const folder =
+        await window.api
+          .folder
+          .open();
+
+      console.log(
+        "Selected folder:",
+        folder
+      );
+
+      if (!folder) return;
+
+      dom.folderPathSpan
+        .textContent =
+          `Selected: ${folder}`;
+
+      state.allFiles =
+        await window.api
+          .folder
+          .scan(folder);
+
+      console.log(
+        "All scanned files:",
+        state.allFiles
+      );
+
+      state.mediaFiles =
+        state.allFiles.filter(
+          f => {
+
+            const lower =
+              f.path
+                .toLowerCase();
+
+            return (
+              !lower.endsWith(
+                ".json"
+              )
+            );
+          }
+        );
+
+      console.log(
+        "Media files:",
+        state.mediaFiles
+      );
+
+      await renderGallery(
+        state.mediaFiles
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Folder open/scan failed:",
+        error
+      );
+
+      dom.folderPathSpan
+        .textContent =
+          "Failed to open folder.";
+    }
+  };
+
+dom.closeBtn.onclick =
+  closeModal;
+
+dom.infoBtn.onclick =
+  showInfo;
 
 document.addEventListener(
   "keydown",
   (e) => {
 
     if (
-      dom.modal.style.display !== "flex"
-    ) return;
+      dom.modal
+        .style
+        .display !== "flex"
+    ) {
+      return;
+    }
 
-    if (e.key === "ArrowRight") {
+    if (
+      e.key ===
+      "ArrowRight"
+    ) {
       nextPhoto();
     }
 
-    if (e.key === "ArrowLeft") {
+    if (
+      e.key ===
+      "ArrowLeft"
+    ) {
       prevPhoto();
     }
 
-    if (e.key === "Escape") {
+    if (
+      e.key ===
+      "Escape"
+    ) {
       closeModal();
     }
   }

@@ -1,4 +1,4 @@
-const { ipcMain, dialog } = require("electron");
+const { BrowserWindow, ipcMain, dialog } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
@@ -9,6 +9,10 @@ const {
   addPeople,
   autoMigrateFolder
 } = require("../services/metadata");
+
+function getWindow() {
+  return BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+}
 
 const MEDIA_EXTENSIONS = new Set([
   ".jpg",
@@ -24,7 +28,13 @@ const MEDIA_EXTENSIONS = new Set([
 function scanFolderRecursive(folderPath) {
   let files = [];
 
-  const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  let entries;
+  try {
+    entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  } catch (err) {
+    console.error("Failed to scan folder:", folderPath, err);
+    return files;
+  }
 
   for (const entry of entries) {
     const fullPath = path.join(folderPath, entry.name);
@@ -78,24 +88,16 @@ function registerMetadataIPC() {
   );
 
   ipcMain.handle(
-    "folder:select",
+    "folder:open",
     async () => {
-      const result = await dialog.showOpenDialog({
-        properties: ["openDirectory"]
-      });
-
-      if (result.canceled) return null;
-
-      return result.filePaths[0];
-    }
-  );
-
-  ipcMain.handle(
-    "open-folder-dialog",
-    async () => {
-      const result = await dialog.showOpenDialog({
-        properties: ["openDirectory"]
-      });
+      const owner = getWindow();
+      const result = owner
+        ? await dialog.showOpenDialog(owner, {
+            properties: ["openDirectory"]
+          })
+        : await dialog.showOpenDialog({
+            properties: ["openDirectory"]
+          });
 
       if (result.canceled) return null;
 

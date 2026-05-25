@@ -1,5 +1,5 @@
-import { dom } from "../utils/dom.js";
-import { state } from "../state/media.state.js";
+import { dom } from "../../utils/dom.js";
+import { state } from "../../state/media.state.js";
 import { renderDetails } from "../metadata/json.render.js";
 
 function findPairedJson(mediaPath) {
