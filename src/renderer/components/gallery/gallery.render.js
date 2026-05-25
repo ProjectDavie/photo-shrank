@@ -1,8 +1,8 @@
-import { dom } from "../utils/dom.js";
-import { state } from "../state/media.state.js";
-import { VIDEO_EXTENSIONS } from "../constants/media.constants.js";
+import { dom } from "../../js/utils/dom.js";
+import { state } from "../../state/media.state.js";
+import { VIDEO_EXTENSIONS } from "../../constants/media.constants.js";
 import { generateThumbnail } from "./thumbnails.js";
-import { openModal } from "../modal/modal.js";
+import { openModal } from "../../js/modal/modal.js";
 
 async function renderGallery(files) {
 

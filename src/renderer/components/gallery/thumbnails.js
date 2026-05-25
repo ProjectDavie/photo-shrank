@@ -1,5 +1,5 @@
-import { state } from "../state/media.state.js";
-import { VIDEO_EXTENSIONS } from "../constants/media.constants.js";
+import { state } from "../../state/media.state.js";
+import { VIDEO_EXTENSIONS } from "../../constants/media.constants.js";
 
 async function generateThumbnail(file) {
 
