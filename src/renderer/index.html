@@ -32,19 +32,30 @@
 
 <body>
 
-  <div id="controls">
+  <div id="app-container">
 
-    <button id="open">
-      Open Folder
-    </button>
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <button id="open">
+          Add Folder
+        </button>
+      </div>
+      <div id="folders-list"></div>
+    </div>
 
-    <span id="folder-path">
-      No folder selected
-    </span>
+    <div id="main-content">
+
+      <div id="controls">
+        <span id="folder-path">
+          No folder selected
+        </span>
+      </div>
+
+      <div id="gallery"></div>
+
+    </div>
 
   </div>
-
-  <div id="gallery"></div>
 
   <div id="modal">
 
@@ -52,21 +63,19 @@
       &times;
     </span>
 
-    <img id="modal-img">
-
-    <video
-      id="modal-video"
-      controls
-    ></video>
-
-    <button class="info-btn">
-      More Info
-    </button>
-
-    <div
-      class="info-box"
-      id="info-box"
-    ></div>
+    <div class="modal-content">
+      <div class="modal-media">
+        <img id="modal-img">
+        <video
+          id="modal-video"
+          controls
+        ></video>
+      </div>
+      <div
+        class="info-box"
+        id="info-box"
+      ></div>
+    </div>
 
   </div>
 

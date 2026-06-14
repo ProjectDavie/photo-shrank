@@ -9,7 +9,7 @@ from "./thumbnails.js";
 import { openModal }
 from "../modal/modal.js";
 
-async function renderGallery(files) {
+async function renderGallery(files, fileMetadataStatus = null) {
 
   dom.gallery.innerHTML = "";
 
@@ -63,6 +63,29 @@ async function renderGallery(files) {
 
       container.appendChild(
         img
+      );
+    }
+
+    const hasMetadata =
+      fileMetadataStatus?.[file.path];
+
+    if (
+      fileMetadataStatus &&
+      !hasMetadata
+    ) {
+      const badge =
+        document.createElement("div");
+
+      badge.className =
+        "metadata-badge missing";
+
+      badge.textContent = "✕";
+
+      badge.title =
+        "Missing JSON metadata";
+
+      container.appendChild(
+        badge
       );
     }
 

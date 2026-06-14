@@ -1,7 +1,7 @@
 import { dom }
 from "./utils/dom.js";
 
-import { state }
+import { state, getCurrentFolder }
 from "./state/media.state.js";
 
 import { renderGallery }
@@ -17,87 +17,84 @@ import {
 } from "./components/modal/modal.navigation.js";
 
 import {
-  showInfo
-} from "./components/modal/modal.info.js";
+  renderFoldersList,
+  selectFolder,
+  updateMainContent
+} from "./components/folder-navigator.js";
 
-dom.button.onclick =
-  async () => {
+async function addFolder() {
+  try {
+    console.log("Opening folder...");
 
-    try {
+    const folderPath =
+      await window.api
+        .folder
+        .open();
 
-      console.log(
-        "Opening folder..."
+    console.log(
+      "Selected folder:",
+      folderPath
+    );
+
+    if (!folderPath) return;
+
+    const allFiles =
+      await window.api
+        .folder
+        .scan(folderPath);
+
+    console.log(
+      "All scanned files:",
+      allFiles
+    );
+
+    const mediaFiles =
+      allFiles.filter(
+        f => {
+          const lower =
+            f.path
+              .toLowerCase();
+
+          return (
+            !lower.endsWith(
+              ".json"
+            )
+          );
+        }
       );
 
-      const folder =
-        await window.api
-          .folder
-          .open();
+    console.log(
+      "Media files:",
+      mediaFiles
+    );
 
-      console.log(
-        "Selected folder:",
-        folder
-      );
+    state.folders.push({
+      path: folderPath,
+      scanned: true,
+      migrated: false,
+      allFiles: allFiles,
+      mediaFiles: mediaFiles
+    });
 
-      if (!folder) return;
+    selectFolder(
+      state.folders.length - 1
+    );
 
-      dom.folderPathSpan
-        .textContent =
-          `Selected: ${folder}`;
+    renderFoldersList();
+    updateMainContent();
 
-      state.allFiles =
-        await window.api
-          .folder
-          .scan(folder);
+  } catch (error) {
+    console.error(
+      "Folder operation failed:",
+      error
+    );
+  }
+}
 
-      console.log(
-        "All scanned files:",
-        state.allFiles
-      );
-
-      state.mediaFiles =
-        state.allFiles.filter(
-          f => {
-
-            const lower =
-              f.path
-                .toLowerCase();
-
-            return (
-              !lower.endsWith(
-                ".json"
-              )
-            );
-          }
-        );
-
-      console.log(
-        "Media files:",
-        state.mediaFiles
-      );
-
-      await renderGallery(
-        state.mediaFiles
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Folder open/scan failed:",
-        error
-      );
-
-      dom.folderPathSpan
-        .textContent =
-          "Failed to open folder.";
-    }
-  };
+dom.button.onclick = addFolder;
 
 dom.closeBtn.onclick =
   closeModal;
-
-dom.infoBtn.onclick =
-  showInfo;
 
 document.addEventListener(
   "keydown",

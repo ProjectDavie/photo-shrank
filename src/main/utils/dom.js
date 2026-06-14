@@ -33,11 +33,6 @@ export const dom = {
       ".close"
     ),
 
-  infoBtn:
-    document.querySelector(
-      ".info-btn"
-    ),
-
   infoBox:
     document.getElementById(
       "info-box"
